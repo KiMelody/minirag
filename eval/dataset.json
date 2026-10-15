@@ -1,0 +1,19 @@
+{
+  "queries": [
+    {"q": "守卫者平台每个监测点位一年收多少钱", "expect": "company-faq"},
+    {"q": "网关指示灯红色常亮怎么办", "expect": "company-faq"},
+    {"q": "私有化部署版本要花多少钱", "expect": "company-faq"},
+    {"q": "年假有几天，怎么按工作年限算", "expect": "hr-handbook"},
+    {"q": "出差住宿一晚上能报多少", "expect": "hr-handbook"},
+    {"q": "发票最晚多久之内要提交报销", "expect": "hr-handbook"},
+    {"q": "在外面拜访客户的时候怎么算考勤", "expect": "hr-handbook"},
+    {"q": "新员工入职会开通哪些账号", "expect": "it-ops"},
+    {"q": "怎么连接公司VPN", "expect": "it-ops"},
+    {"q": "笔记本电脑坏了找谁修", "expect": "it-ops"},
+    {"q": "销售最多能打多少折扣不用上级审批", "expect": "sales-policy"},
+    {"q": "华东地区的总代理是哪家公司", "expect": "sales-policy"},
+    {"q": "客户欠款拖欠多久会被停止接单", "expect": "sales-policy"},
+    {"q": "买5万元的设备需要谁审批", "expect": "purchase-proc"},
+    {"q": "新供应商入驻要提交什么资质材料", "expect": "purchase-proc"}
+  ]
+}

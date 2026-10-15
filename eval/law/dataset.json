@@ -1,0 +1,24 @@
+{
+  "queries": [
+    {"q": "试用期最长可以约定多久", "expect": "labor-contract-law"},
+    {"q": "试用期工资最低不能低于约定工资的百分之多少", "expect": "labor-contract-law"},
+    {"q": "单位一直不签书面劳动合同有什么后果", "expect": "labor-contract-law"},
+    {"q": "入职超过一年还没签合同算不算无固定期限", "expect": "labor-contract-law"},
+    {"q": "离职时经济补偿的月工资高于社平三倍怎么算", "expect": "labor-contract-law"},
+    {"q": "竞业限制期间公司要给员工补偿吗", "expect": "labor-contract-law"},
+    {"q": "开一家劳务派遣公司注册资本要多少", "expect": "labor-contract-law"},
+    {"q": "裁掉二十个人需要提前跟工会打招呼吗", "expect": "labor-contract-law"},
+    {"q": "非全日制用工一天最多干几个小时", "expect": "labor-contract-law"},
+    {"q": "工作日晚上的加班费是正常工资的几倍", "expect": "labor-law"},
+    {"q": "国庆节三天加班工资按几倍算", "expect": "labor-law"},
+    {"q": "用人单位应当保证劳动者每周至少休息多久", "expect": "labor-law"},
+    {"q": "怀孕七个月以上的女职工还能安排夜班吗", "expect": "labor-law"},
+    {"q": "工资最长多久必须发一次", "expect": "labor-law"},
+    {"q": "法律禁止哪些就业歧视", "expect": "labor-law"},
+    {"q": "年满十六岁未满十八岁算什么工", "expect": "labor-law"},
+    {"q": "经济补偿按应发工资还是实发工资算", "expect": "lc-impl-reg"},
+    {"q": "干到多少岁劳动合同自动终止", "expect": "lc-impl-reg"},
+    {"q": "单位多付一个月工资解约时按什么标准给", "expect": "lc-impl-reg"},
+    {"q": "职工名册里都要记哪些信息", "expect": "lc-impl-reg"}
+  ]
+}

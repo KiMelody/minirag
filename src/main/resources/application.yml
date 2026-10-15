@@ -1,0 +1,42 @@
+server:
+  port: 18090
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: minirag
+  mvc:
+    async:
+      request-timeout: 60s
+  datasource:
+    url: jdbc:sqlite:./data/minirag.db
+    driver-class-name: org.sqlite.JDBC
+  ai:
+    openai:
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+      api-key: ${DEEPSEEK_API_KEY:}
+      chat:
+        options:
+          model: deepseek/deepseek-v4.1-flash
+          temperature: 0.3
+    mcp:
+      server:
+        name: minirag
+        version: 0.1.0
+
+minirag:
+  demo-key: ${DEMO_KEY:}
+  admin-key: ${ADMIN_KEY:}
+  chunk-size: 500
+  chunk-overlap: 80
+  embedding:
+    base-url: ${EMBEDDING_BASE_URL:https://api.siliconflow.cn/v1}
+    api-key: ${EMBEDDING_API_KEY:}
+    model: ${EMBEDDING_MODEL:BAAI/bge-m3}
+  retrieval:
+    vector-top-k: 8
+    keyword-top-k: 8
+    rrf-k: 60
+    context-top-k: 6
+    rerank: false

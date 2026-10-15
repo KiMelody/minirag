@@ -1,0 +1,15 @@
+target/
+data/
+*.log
+.idea/
+*.iml
+.vscode/
+.env
+__pycache__/
+
+# local eval data (rebuildable from official sources, kept out of the repo)
+eval/corpus/
+eval/law/raw/
+eval/law/labor-law.json
+eval/law/labor-contract-law.json
+eval/law/lc-impl-reg.json

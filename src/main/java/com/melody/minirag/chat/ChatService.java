@@ -24,6 +24,8 @@ public class ChatService {
 
     /** 生成上下文只喂前 4 段：prefill 是生成延迟的大头，RRF 前几名通常已命中。 */
     private static final int CHAT_CONTEXT_LIMIT = 4;
+    /** 防超长输入浪费 FTS/embedding/生成开销。 */
+    private static final int MAX_QUESTION_CHARS = 2_000;
 
     private static final Pattern CITE = Pattern.compile("\\[(\\d+)]");
 
@@ -109,6 +111,9 @@ public class ChatService {
     private Prepared prepare(String question, String mode) {
         if (question == null || question.isBlank()) {
             throw new IllegalArgumentException("问题不能为空");
+        }
+        if (question.length() > MAX_QUESTION_CHARS) {
+            throw new IllegalArgumentException("问题过长，请精简后重试");
         }
         long t0 = System.currentTimeMillis();
         List<RetrievalService.Chunk> found = switch (mode == null ? "" : mode) {

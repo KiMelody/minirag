@@ -13,6 +13,8 @@ import java.util.List;
 @RequestMapping("/api/search")
 public class SearchController {
 
+    private static final int MAX_QUERY_CHARS = 2_000;
+
     private final RetrievalService retrieval;
 
     public SearchController(RetrievalService retrieval) {
@@ -27,6 +29,9 @@ public class SearchController {
 
     @GetMapping
     public SearchResult search(@RequestParam String q, @RequestParam(defaultValue = "hybrid") String mode) {
+        if (q.length() > MAX_QUERY_CHARS) {
+            throw new IllegalArgumentException("查询过长");
+        }
         List<RetrievalService.Chunk> chunks = switch (mode) {
             case "vector" -> retrieval.searchVector(q);
             case "hybrid" -> retrieval.search(q, false);

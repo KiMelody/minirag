@@ -25,7 +25,7 @@ class DemoKeyFilterTest {
     }
 
     @Test
-    void validKeyInHeaderOrParamPasses() throws ServletException, IOException {
+    void validKeyInHeaderPasses() throws ServletException, IOException {
         DemoKeyFilter filter = new DemoKeyFilter(props);
 
         MockHttpServletRequest withHeader = new MockHttpServletRequest("POST", "/api/chat");
@@ -33,12 +33,61 @@ class DemoKeyFilterTest {
         MockHttpServletResponse resp1 = new MockHttpServletResponse();
         filter.doFilter(withHeader, resp1, new MockFilterChain());
         assertEquals(200, resp1.getStatus());
+    }
 
-        MockHttpServletRequest withParam = new MockHttpServletRequest("GET", "/api/search");
-        withParam.addParameter("key", "secret123");
-        MockHttpServletResponse resp2 = new MockHttpServletResponse();
-        filter.doFilter(withParam, resp2, new MockFilterChain());
-        assertEquals(200, resp2.getStatus());
+    @Test
+    void encodedPathVariantRejectedWith403() throws ServletException, IOException {
+        DemoKeyFilter filter = new DemoKeyFilter(props);
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/cha%74");
+        req.addHeader("X-Demo-Key", "secret123");
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        filter.doFilter(req, resp, new MockFilterChain());
+        assertEquals(403, resp.getStatus(), "encoded path variants must not reach controllers");
+    }
+
+    @Test
+    void oversizedBodyRejectedWith413() throws ServletException, IOException {
+        DemoKeyFilter filter = new DemoKeyFilter(props);
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/chat");
+        req.addHeader("X-Demo-Key", "secret123");
+        req.setContent(new byte[300 * 1024]);
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        filter.doFilter(req, resp, new MockFilterChain());
+        assertEquals(413, resp.getStatus());
+    }
+
+    @Test
+    void wrongKeyConsumesRateQuota() throws ServletException, IOException {
+        DemoKeyFilter filter = new DemoKeyFilter(props);
+        for (int i = 0; i < 20; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/chat");
+            req.addHeader("X-Demo-Key", "wrong-key");
+            MockHttpServletResponse resp = new MockHttpServletResponse();
+            filter.doFilter(req, resp, new MockFilterChain());
+            assertEquals(401, resp.getStatus(), "attempt " + (i + 1) + " should be 401");
+        }
+        MockHttpServletRequest burst = new MockHttpServletRequest("POST", "/api/chat");
+        burst.addHeader("X-Demo-Key", "wrong-key");
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        filter.doFilter(burst, resp, new MockFilterChain());
+        assertEquals(429, resp.getStatus(), "brute-force attempts must exhaust the rate quota");
+    }
+
+    @Test
+    void ingestWrongKeyConsumesRateQuota() throws ServletException, IOException {
+        DemoKeyFilter filter = new DemoKeyFilter(props);
+        for (int i = 0; i < 20; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/documents");
+            req.addHeader("X-Admin-Key", "nope");
+            MockHttpServletResponse resp = new MockHttpServletResponse();
+            filter.doFilter(req, resp, new MockFilterChain());
+            assertEquals(401, resp.getStatus());
+        }
+        MockHttpServletRequest burst = new MockHttpServletRequest("POST", "/api/documents");
+        burst.addHeader("X-Admin-Key", "nope");
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        filter.doFilter(burst, resp, new MockFilterChain());
+        assertEquals(429, resp.getStatus());
     }
 
     @Test

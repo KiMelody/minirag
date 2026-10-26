@@ -43,7 +43,11 @@ Open http://localhost:18090 and start asking. Data lives in `./data` (SQLite, cr
 
 ## MCP
 
-Two tools: `query(question, mode?)` — ask and get a cited answer; `ingest_text(docId, text, adminKey)` — add a document.
+Listed on the official MCP Registry as `io.github.KiMelody/minirag`. Two tools: `query(question, mode?)` — ask and get a cited answer; `ingest_text(docId, text, adminKey)` — add a document.
+
+```bash
+claude mcp add --transport sse minirag http://localhost:18090/sse
+```
 
 ```json
 {

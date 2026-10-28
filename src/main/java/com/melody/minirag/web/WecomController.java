@@ -16,8 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,11 +36,23 @@ import java.util.regex.Pattern;
 public class WecomController {
 
     private static final Logger log = LoggerFactory.getLogger(WecomController.class);
+    /** 回调时间戳允许的时钟偏移，超出视为过期重放。 */
+    private static final long MAX_SKEW_MS = 5 * 60 * 1000;
+    private static final int QUEUE_CAPACITY = 64;
 
     private final WecomCrypto crypto;
     private final ChatService chatService;
     private final WecomClient wecom;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /** 已见 (timestamp:nonce) 组合，防短窗口内重放；定期淘汰过期项防膨胀。 */
+    private final Map<String, Long> seenNonces = new ConcurrentHashMap<>();
+    private final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(QUEUE_CAPACITY),
+            r -> {
+                Thread t = new Thread(r, "wecom-answer");
+                t.setDaemon(true);
+                return t;
+            },
+            (r, pool) -> log.warn("企微问答队列已满（{}），任务被丢弃", QUEUE_CAPACITY));
 
     public WecomController(WecomProperties props, ChatService chatService, WecomClient wecom) {
         this.crypto = new WecomCrypto(props.token(), props.aesKey(), props.corpId());
@@ -49,7 +65,7 @@ public class WecomController {
     public ResponseEntity<String> verify(@RequestParam("msg_signature") String signature,
                                          @RequestParam String timestamp, @RequestParam String nonce,
                                          @RequestParam String echostr) {
-        if (!crypto.verify(signature, timestamp, nonce, echostr)) {
+        if (!fresh(timestamp, nonce) || !crypto.verify(signature, timestamp, nonce, echostr)) {
             return ResponseEntity.status(403).body("signature mismatch");
         }
         return ResponseEntity.ok(crypto.decrypt(echostr));
@@ -59,6 +75,9 @@ public class WecomController {
     public ResponseEntity<String> onMessage(@RequestParam("msg_signature") String signature,
                                             @RequestParam String timestamp, @RequestParam String nonce,
                                             @RequestBody String encryptedXml) {
+        if (!fresh(timestamp, nonce)) {
+            return ResponseEntity.status(403).body("stale or replayed request");
+        }
         String encrypt = tag(encryptedXml, "Encrypt");
         if (encrypt == null || !crypto.verify(signature, timestamp, nonce, encrypt)) {
             return ResponseEntity.status(403).body("signature mismatch");
@@ -80,6 +99,25 @@ public class WecomController {
         }
         // 企微规范：立即返回空串表示已受理，避免 5 秒超时重试
         return ResponseEntity.ok("");
+    }
+
+    /** 时间戳未过期且 (timestamp:nonce) 首次出现，否则视为重放。 */
+    private boolean fresh(String timestamp, String nonce) {
+        long ts;
+        try {
+            ts = Long.parseLong(timestamp) * 1000;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        if (Math.abs(now - ts) > MAX_SKEW_MS) {
+            return false;
+        }
+        if (seenNonces.putIfAbsent(timestamp + ":" + nonce, now) != null) {
+            return false;
+        }
+        seenNonces.entrySet().removeIf(e -> now - e.getValue() > 2 * MAX_SKEW_MS);
+        return true;
     }
 
     static String tag(String xml, String name) {

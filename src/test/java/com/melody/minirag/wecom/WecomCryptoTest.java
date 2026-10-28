@@ -43,4 +43,13 @@ class WecomCryptoTest {
     void constructorRejectsInvalidAesKeyLength() {
         assertThrows(IllegalArgumentException.class, () -> new WecomCrypto(TOKEN, "too-short", CORP_ID));
     }
+
+    @Test
+    void signaturePartsConcatenatedInDictionaryOrder() {
+        // 官方协议：SHA1(sort(token, timestamp, nonce, encrypt))，非传入顺序
+        assertEquals("1nonce0token2zz",
+                WecomCrypto.sortedConcat("token2", "1", "nonce0", "zz"));
+        assertEquals("abcd",
+                WecomCrypto.sortedConcat("d", "c", "b", "a"));
+    }
 }

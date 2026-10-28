@@ -389,7 +389,9 @@
       msgs.scrollTop = msgs.scrollHeight;
     }
 
-    fetch("/api/chat/stream", {
+    // 推导 API 前缀：根部署为空串；子路径部署（如 /law/）取其前缀，保证 fetch 始终打回本实例
+    const apiBase = location.pathname.replace(/\/(index\.html)?$/, "");
+    fetch(apiBase + "/api/chat/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "text/event-stream", "X-Demo-Key": key },
       body: JSON.stringify({ question: question, mode: mode })

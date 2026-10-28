@@ -6,10 +6,8 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
 
 /**
  * 企微回调消息加解密与验签（按官方 WXBizMsgCrypt 协议自实现，无第三方依赖）。
@@ -37,22 +35,34 @@ public class WecomCrypto {
 
     /** 校验回调签名：SHA1(字典序排序(token, timestamp, nonce, encrypt))。 */
     public boolean verify(String msgSignature, String timestamp, String nonce, String encrypt) {
-        return signature(timestamp, nonce, encrypt).equals(msgSignature);
+        return MessageDigest.isEqual(
+                signature(timestamp, nonce, encrypt).getBytes(StandardCharsets.UTF_8),
+                msgSignature == null ? new byte[0] : msgSignature.getBytes(StandardCharsets.UTF_8));
     }
 
     public String signature(String timestamp, String nonce, String encrypt) {
         try {
-            List<String> parts = new ArrayList<>(List.of(token, timestamp, nonce, encrypt));
-            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-            byte[] digest = sha1.digest(String.join("", parts).getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder();
-            for (byte b : digest) {
-                hex.append(String.format("%02x", b));
-            }
-            return hex.toString();
+            return sha1Hex(sortedConcat(token, timestamp, nonce, encrypt));
         } catch (Exception e) {
             throw new IllegalStateException("SHA-1 不可用", e);
         }
+    }
+
+    /** 官方协议要求四个参与值按字典序排序后拼接，不可保持传入顺序。 */
+    static String sortedConcat(String... parts) {
+        String[] sorted = parts.clone();
+        Arrays.sort(sorted);
+        return String.join("", sorted);
+    }
+
+    private static String sha1Hex(String input) throws Exception {
+        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+        byte[] digest = sha1.digest(input.getBytes(StandardCharsets.UTF_8));
+        StringBuilder hex = new StringBuilder();
+        for (byte b : digest) {
+            hex.append(String.format("%02x", b));
+        }
+        return hex.toString();
     }
 
     public String encrypt(String plain) {

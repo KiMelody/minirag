@@ -198,9 +198,7 @@
     </div>
     <div class="samples">
       <span class="samples-label">试试这些问题 →</span>
-      <button class="chip" data-q="守卫者平台怎么收费？私有化部署多少钱？">守卫者平台怎么收费？</button>
-      <button class="chip" data-q="网关指示灯红色常亮怎么处理？">网关红灯怎么处理？</button>
-      <button class="chip" data-q="客户欠款拖欠多久会被停止接单？">欠款多久会停单？</button>
+      <span id="sampleChips"></span>
     </div>
   </section>
 
@@ -452,8 +450,22 @@
     ask(q);
   });
 
-  document.querySelectorAll(".chip[data-q]").forEach(function (c) {
-    c.addEventListener("click", function () { ask(c.dataset.q); });
+  // 示例问题按部署形态切换：默认演示语料；/law 劳动法库给对应法条问题
+  const SAMPLES = location.pathname.startsWith("/law")
+    ? [{ t: "试用期最长多久", q: "试用期最长可以约定多久？" },
+       { t: "到期不续签有补偿吗", q: "劳动合同到期不续签有补偿吗？" },
+       { t: "加班工资怎么算", q: "加班工资怎么算？" }]
+    : [{ t: "守卫者平台怎么收费", q: "守卫者平台怎么收费？私有化部署多少钱？" },
+       { t: "网关红灯怎么处理", q: "网关指示灯红色常亮怎么处理？" },
+       { t: "欠款多久会停单", q: "客户欠款拖欠多久会被停止接单？" }];
+  const chipBox = document.getElementById("sampleChips");
+  SAMPLES.forEach(function (s) {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.dataset.q = s.q;
+    b.textContent = s.t;
+    b.addEventListener("click", function () { ask(s.q); });
+    chipBox.appendChild(b);
   });
 
   document.querySelectorAll(".mode").forEach(function (b) {
